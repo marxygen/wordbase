@@ -234,13 +234,13 @@ class OpenDictionary(object):
 
 
 class WordbaseApplication(Frame):
-    def __init__(self, master=None, width=300, height=300):
+    def __init__(self, master=None, width=300, height=300, opendict=None):
         super().__init__(master)
         self.master.resizable(False, False)
         self.master = master
         self.width = width
         self.height = height
-        self.current_dictionary = None
+        self.current_dictionary = opendict
         self.selected_word = None
         self.create_widgets()
         self.startup()
@@ -336,9 +336,15 @@ class WordbaseApplication(Frame):
     def startup(self):
         """
         On startup we check the directory for files
+        Unless one was specified using command line arguments
         If we find one, we use it
         If we find multiple, we ask the user to open one
         """
+        if self.current_dictionary:
+            self.load_dictionary(self.current_dictionary)
+            messagebox.showinfo('Requested dictionary opened',
+                                f'You requested to open the dictionary {self.current_dictionary[:30] + ("..." if len(self.current_dictionary) > 30 else "")}.\n It is done')
+            return
         try:
             dicts = self._get_available_dictionaries()
             if not dicts:

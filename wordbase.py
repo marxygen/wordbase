@@ -18,10 +18,12 @@ if not sys.version_info[0] == 3:
     print('This project is designed to be executed with Python 3.x.x\nTerminating...')
     raise SystemExit
 
+opendict = sys.argv[1] if len(sys.argv) > 1 else None
+
 root = tk.Tk()
 root.title('Wordbase')
 root.geometry("{0}x{1}+300+100".format(1000,
                                        root.winfo_screenheight()//2))
 app = WordbaseApplication(
-    master=root, width=root.winfo_screenwidth(), height=root.winfo_screenheight())
+    master=root, width=root.winfo_screenwidth(), height=root.winfo_screenheight(), opendict=opendict)
 app.mainloop()
