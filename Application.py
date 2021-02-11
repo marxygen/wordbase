@@ -2,8 +2,6 @@ from tkinter import *
 from tkinter import messagebox, filedialog
 import os
 from presets import *
-import json
-from json.decoder import JSONDecodeError
 from datetime import datetime as dt
 from operations import *
 from exceptions import *
@@ -169,6 +167,7 @@ class WordbaseApplication(Frame):
         self.width = width
         self.height = height
         self.current_dictionary = None
+        self.selected_word = None
         self.create_widgets()
         self.startup()
 
@@ -182,6 +181,14 @@ class WordbaseApplication(Frame):
         self.master.wait_window(self.pickdict.top)
 
     def load_dictionary(self, dictionary):
+        self.curtr.delete(0, END)
+        self.curexpl.delete(1.0, END)
+        self.selected_word = None
+        self.curtr.config(state='readonly')
+        self.curexpl.config(state='disabled')
+        self.applychanges.config(state='disabled')
+        self.curword.config(text='Word: [Not selected]')
+
         self.listbox.delete(0, 'end')
         path = os.path.normpath(dictionary)
         self.current_dictionary = path
@@ -388,6 +395,61 @@ class WordbaseApplication(Frame):
             messagebox.showerror(
                 'Error', 'Couldn\'t open the dictionary')
 
+    def word_selected(self, event):
+        """
+        Is called by the listbox when a word is selected
+        """
+        if not self.listbox.curselection():
+            return
+
+        word_data = list(get_items_in_dict(self.current_dictionary).items())[
+            self.listbox.curselection()[0]]
+        self.selected_word = word_data[0]
+
+        # load data about this word
+
+        self.curtr.delete(0, END)
+        self.curexpl.delete(1.0, END)
+
+        self.curtr.config(state='normal')
+        self.curexpl.config(state='normal')
+
+        self.curword.config(text=f'Word: {self.selected_word}')
+        translation, explanation = parse_word_item(word_data[1])
+        self.curtr.insert(0, translation)
+        self.curexpl.insert(0.0, explanation)
+        self.applychanges.config(state='normal')
+
+    def apply_changes_to_word(self):
+        if not self.selected_word:
+            # this node will never be executed
+            # but if a future update will introduce a bug
+            # it will notify the user about it
+            messagebox.showerror('No word selected',
+                                 'Please select a word in the list to edit it')
+            self.applychanges.config(state='disabled')
+            return
+
+        translation = self.curtr.get().rstrip()
+        explanation = self.curexpl.get("1.0", END).rstrip()
+        if not translation or not explanation:
+            messagebox.showerror(
+                'Invalid input', 'Please make sure you entered the correct information')
+            return
+
+        try:
+            append_info(self.current_dictionary,
+                        self.selected_word, translation, explanation)
+            messagebox.showinfo(
+                'Change successful', f'The word {self.selected_word} has been updated!')
+            self.load_dictionary(self.current_dictionary)
+        except CannotOpenDictionaryException:
+            messagebox.showerror('Word change error',
+                                 'Cannot open the dictionary. Please make sure the dictionary file is still there')
+        except CannotSaveDictionaryException:
+            messagebox.showerror('Word change error',
+                                 'Cannot save the dictionary. The changes might not have been applied')
+
     def create_widgets(self):
         self.menubar = Menu(self.master)
         self.menubar.add_command(
@@ -401,6 +463,7 @@ class WordbaseApplication(Frame):
 
         self.listbox = Listbox(width=50, height=23)
         self.listbox.grid(row=1, column=1, padx=(10, 10), pady=(0, 0))
+        self.listbox.bind("<<ListboxSelect>>", self.word_selected)
 
         self.numofels = Label(text='')
         self.numofels.grid(row=2, column=1)
@@ -441,4 +504,21 @@ class WordbaseApplication(Frame):
 
         # Word info
         self.winfo = Label(text='Word Info', font=7)
-        self.winfo.place(x=750, y=5)
+        self.winfo.place(x=700, y=5)
+
+        self.curword = Label(text='Word: [Not selected]')
+        self.curword.place(x=700, y=30)
+
+        self.curtrl = Label(text='Translation: ')
+        self.curtrl.place(x=700, y=60)
+        self.curtr = Entry(state='readonly')
+        self.curtr.place(x=780, y=60)
+
+        self.expll = Label(text='Explanation: ')
+        self.expll.place(x=700, y=82)
+        self.curexpl = Text(width=30, height=10, state='disabled')
+        self.curexpl.place(x=700, y=105)
+
+        self.applychanges = Button(
+            text='Apply', state='disabled', command=self.apply_changes_to_word)
+        self.applychanges.place(x=700, y=275)
