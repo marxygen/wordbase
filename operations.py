@@ -20,7 +20,6 @@ def get_items_in_dict(dictionary):
 
 
 def find_word(dictionary, target):
-    path = os.path.normpath(dictionary)
     try:
         words = get_items_in_dict(dictionary)
         target_data = words.get(target)
@@ -70,6 +69,16 @@ def append_info(dictionary, word, translation, explanation):
         words[word] = create_word_item(translation, explanation)
         save_dictionary(dictionary, words)
     except CannotSaveDictionaryException:
+        raise
+    except CannotOpenDictionaryException:
+        raise
+
+
+def find_words_with_query(dictionary, query):
+    try:
+        words = get_items_in_dict(dictionary)
+        return [word for word in words.items() if query in parse_word_item(word[1])[1]]
+    except EmptyDictionaryException:
         raise
     except CannotOpenDictionaryException:
         raise

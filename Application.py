@@ -7,6 +7,80 @@ from operations import *
 from exceptions import *
 
 
+class SearchQueryResults(object):
+    def __init__(self, master, showword, available_words):
+        top = self.top = Toplevel(master)
+        self.selected_word = None
+        self.showword = showword
+        self.available_words = available_words
+        top.resizable(False, False)
+        top.geometry("{0}x{1}+600+200".format(400,
+                                              300))
+        self.top.protocol("WM_DELETE_WINDOW", self.cleanup)
+
+        self.header = Label(top,
+                            text='Search successful\nPick a word to view it. All words below match your search query', padx=10)
+        self.header.grid(row=1, column=1)
+        self.avd = Listbox(top, width=70, height=12, selectmode='SINGLE')
+        self.avd.grid(row=2, column=1)
+
+        self.pickbttn = Button(top, text='Pick this one',
+                               command=self.pick)
+        self.pickbttn.grid(row=3, column=1)
+
+        self.onload()
+
+    def onload(self):
+        for index, word in enumerate(self.available_words):
+            translation, explanation = parse_word_item(word[1])
+            self.avd.insert(
+                index+1, f'{word[0]} - {translation} ({explanation[:30] + ("..." if len(explanation) > 30 else "")})')
+
+    def pick(self):
+        if self.avd.curselection():
+            self.selected_word = self.available_words[self.avd.curselection()[
+                0]]
+            self.cleanup()
+
+    def cleanup(self):
+        self.top.destroy()
+        self.callback()
+
+    def callback(self):
+        if self.selected_word:
+            translation, explanation = parse_word_item(self.selected_word[1])
+            self.showword(self.selected_word[0], translation, explanation)
+
+
+class GetSearchQuery(object):
+    def __init__(self, master, got_query):
+        top = self.top = Toplevel(master)
+        top.attributes("-topmost", True)
+        top.resizable(False, False)
+        self.got_query = got_query
+        top.geometry("{0}x{1}+400+200".format(400,
+                                              300))
+
+        self.header = Label(top,
+                            text='Enter the search query', padx=10, font=20)
+        self.header.grid(row=1, column=1)
+        self.query = Text(top, width=48, height=10, padx=10, pady=10)
+        self.query.grid(row=2, column=1)
+        self.send = Button(top, text='Search this query',
+                           command=self.query_entered, padx=10, pady=10)
+        self.send.grid(row=4, column=1)
+
+    def query_entered(self):
+        if not self.query.get(0.0, END).strip():
+            self.top.withdraw()
+            messagebox.showerror(
+                'Invalid query', 'The query you entered is invalid. No search will be performed')
+            self.top.update()
+            return
+        self.top.withdraw()
+        self.got_query(self.query.get(0.0, END).strip())
+
+
 class SearchResults(object):
     def __init__(self, master, word, translation, explanation):
         top = self.top = Toplevel(master)
@@ -296,6 +370,10 @@ class WordbaseApplication(Frame):
             messagebox.showerror('An error occurred', e)
             raise SystemExit
 
+    def _show_search_results(self, word, translation, explanation):
+        res = SearchResults(self.master, word, translation, explanation)
+        self.master.wait_window(res.top)
+
     def _clear_fields(self):
         self.wordt.delete(0, END)
         self.trant.delete(0, END)
@@ -315,8 +393,7 @@ class WordbaseApplication(Frame):
                 self.current_dictionary, target)
 
             # display the data
-            info = SearchResults(self.master, word, translation, explanation)
-            self.master.wait_window(info.top)
+            self._show_search_results(word, translation, explanation)
 
         except WordNotFoundException:
             messagebox.showerror(
@@ -450,12 +527,36 @@ class WordbaseApplication(Frame):
             messagebox.showerror('Word change error',
                                  'Cannot save the dictionary. The changes might not have been applied')
 
+    def initiate_phrase_search(self):
+        sq = GetSearchQuery(self.master, self.search_query)
+        self.master.wait_window(sq.top)
+
+    def search_query(self, query):
+        try:
+            results = find_words_with_query(self.current_dictionary, query)
+            if not results:
+                messagebox.showwarning(
+                    'No matches', f'There are no words mathing your query: {query[:30] + ("..." if len(query) > 30 else "")}')
+                return
+
+            sqr = SearchQueryResults(
+                self.master, self._show_search_results, results)
+            self.master.wait_window(sqr.top)
+
+        except EmptyDictionaryException:
+            messagebox.showerror(
+                'Error', 'Cannot perform search: the dictionary appears empty')
+        except CannotOpenDictionaryException:
+            messagebox.showerror('Error', 'Cannot open the dictionary')
+
     def create_widgets(self):
         self.menubar = Menu(self.master)
         self.menubar.add_command(
             label="Open dictionary", command=self.open_dictionary)
         self.menubar.add_command(
             label="Delete selected word", command=self.delete_wd)
+        self.menubar.add_command(
+            label="Search a phrase", command=self.initiate_phrase_search)
         self.master.config(menu=self.menubar)
 
         self.lbtitle = Label(text='')
