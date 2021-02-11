@@ -18,6 +18,11 @@ class CannotOpenDictionaryException(WordbaseException):
         super().__init__(*args, **kwargs)
 
 
+class CannotSaveDictionaryException(WordbaseException):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
 class EmptyDictionaryException(WordbaseException):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

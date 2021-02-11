@@ -303,7 +303,6 @@ class WordbaseApplication(Frame):
             messagebox.showerror(
                 'Invalid query', 'You\'ve entered an invalid query')
             return
-        target_data = None
         try:
             word, translation, explanation = find_word(
                 self.current_dictionary, target)
@@ -333,38 +332,34 @@ class WordbaseApplication(Frame):
             return
 
         try:
-            data = None
-            with open(self.current_dictionary, 'r') as file:
-                data = json.load(file)
-
-            data[word] = create_word_item(translation, explanation)
-
-            with open(self.current_dictionary, 'w') as file:
-                json.dump(data, file)
+            append_info(self.current_dictionary, word,
+                        translation, explanation)
 
             messagebox.showinfo(
                 'Success', f'The word "{word}" is now in this dictionary!')
 
             self.load_dictionary(self.current_dictionary)
             return
-        except JSONDecodeError:
+        except EmptyDictionaryException:
             # this is the first word
             try:
-                with open(self.current_dictionary, 'w+') as file:
-                    json.dump(
-                        {word: create_word_item(translation, explanation)}, file)
+                save_dictionary(self.current_dictionary, {
+                                word: {create_word_item(translation, explanation)}})
 
                 messagebox.showinfo(
                     'Success', f'The word "{word}" is now in this dictionary!')
 
                 self.load_dictionary(self.current_dictionary)
-            except Exception as e:
+            except CannotSaveDictionaryException:
                 # failed
                 messagebox.showerror(
-                    'Error', f'Couldn\'t perform the operation: {e}')
-        except Exception as e:
+                    'Error', 'Couldn\'t save the dictionary')
+        except CannotSaveDictionaryException:
             messagebox.showerror(
-                'Error', f'Couldn\'t perform the operation: {e}')
+                'Error', 'Couldn\'t save the dictionary')
+        except CannotOpenDictionaryException:
+            messagebox.showerror(
+                'Error', 'Couldn\'t open the dictionary')
 
     def create_widgets(self):
         self.menubar = Menu(self.master)
