@@ -20,7 +20,7 @@ if not sys.version_info[0] == 3:
 
 root = tk.Tk()
 root.title('Wordbase')
-root.geometry("{0}x{1}+300+100".format(root.winfo_screenwidth()//2,
+root.geometry("{0}x{1}+300+100".format(1000,
                                        root.winfo_screenheight()//2))
 app = WordbaseApplication(
     master=root, width=root.winfo_screenwidth(), height=root.winfo_screenheight())

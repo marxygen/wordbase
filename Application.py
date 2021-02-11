@@ -78,7 +78,7 @@ class PickDictionary(object):
         if not self.avd.curselection():
             messagebox.showerror(
                 'Selection empty', 'Please select a dictionary to process it or close this window')
-            pass
+            return
 
         self.selected_dict = self.available_dicts[self.avd.curselection()[0]]
         self.cleanup()
@@ -197,7 +197,7 @@ class WordbaseApplication(Frame):
                 # word is now a dictionary
                 translation, explanation = parse_word_item(item)
                 self.listbox.insert(
-                    index+1, f'{word} - {translation} ({explanation[:10] + "..."})')
+                    index+1, f'{word} - {translation} ({explanation[:30] + ("..." if len(explanation) > 30 else "")})')
                 del words[word]
                 numof_entries += 1
 
@@ -290,9 +290,9 @@ class WordbaseApplication(Frame):
             raise SystemExit
 
     def _clear_fields(self):
-        self.wordt.delete()
-        self.trant.delete()
-        self.explt.delete()
+        self.wordt.delete(0, END)
+        self.trant.delete(0, END)
+        self.explt.delete(1.0, END)
 
     def search_for_word(self):
         """
@@ -321,6 +321,31 @@ class WordbaseApplication(Frame):
                 'Error occurred', 'The search query couldn\t be executed')
             return
 
+    def delete_wd(self):
+        if not self.listbox.curselection():
+            messagebox.showerror(
+                'Selection empty', 'Please select a word to delete it')
+            return
+
+        try:
+            word = list(get_items_in_dict(self.current_dictionary).items())[
+                self.listbox.curselection()[0]][0]
+            if not word:
+                raise CannotDeleteWordException
+            delete_word(self.current_dictionary, word)
+            self.load_dictionary(self.current_dictionary)
+            messagebox.showinfo(
+                'Word deleted', f'The word {word} was successfully removed from this dictionary')
+        except CannotDeleteWordException:
+            messagebox.showerror(
+                'Deletion error', 'Couldn\'t delete this word')
+        except CannotOpenDictionaryException:
+            messagebox.showerror(
+                'Deletion error', 'Couldn\'t open the dictionary. Make sure you didn\'t delete it')
+        except CannotSaveDictionaryException:
+            messagebox.showerror(
+                'Deletion error', 'Couldn\'t save the dictionary after deleting the word. It might still be there')
+
     def add_word(self):
         word = self.wordt.get().strip()
         translation = self.trant.get().rstrip()
@@ -337,6 +362,7 @@ class WordbaseApplication(Frame):
 
             messagebox.showinfo(
                 'Success', f'The word "{word}" is now in this dictionary!')
+            self._clear_fields()
 
             self.load_dictionary(self.current_dictionary)
             return
@@ -348,6 +374,7 @@ class WordbaseApplication(Frame):
 
                 messagebox.showinfo(
                     'Success', f'The word "{word}" is now in this dictionary!')
+                self._clear_fields()
 
                 self.load_dictionary(self.current_dictionary)
             except CannotSaveDictionaryException:
@@ -365,6 +392,8 @@ class WordbaseApplication(Frame):
         self.menubar = Menu(self.master)
         self.menubar.add_command(
             label="Open dictionary", command=self.open_dictionary)
+        self.menubar.add_command(
+            label="Delete selected word", command=self.delete_wd)
         self.master.config(menu=self.menubar)
 
         self.lbtitle = Label(text='')
@@ -409,3 +438,7 @@ class WordbaseApplication(Frame):
 
         self.addbttn = Button(text='Add', command=self.add_word)
         self.addbttn.place(x=328, y=330)
+
+        # Word info
+        self.winfo = Label(text='Word Info', font=7)
+        self.winfo.place(x=750, y=5)

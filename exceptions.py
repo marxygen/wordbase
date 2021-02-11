@@ -31,3 +31,8 @@ class EmptyDictionaryException(WordbaseException):
 class CannotCompleteSearchException(WordbaseException):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+
+class CannotDeleteWordException(WordbaseException):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
