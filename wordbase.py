@@ -13,7 +13,8 @@ from Application import WordbaseApplication
 if __name__ != "__main__":
     raise IncorrectExecutionException('This file is to be executed directly')
 
-if not sys.version_info[0] == 3:
+if not sys.version_info[0] == 3 or not sys.version_info[1] < 8:
+    # if Python 3.[< 8].x is running, tuple unpacking won't be executed and will result in an error
     print('This project is designed to be executed with Python 3.x.x\nTerminating...')
     raise SystemExit
 
