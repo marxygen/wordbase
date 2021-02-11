@@ -245,13 +245,10 @@ class WordbaseApplication(Frame):
         self.create_widgets()
         self.startup()
 
-    def _get_available_dictionaries(self, path=STORAGE_PATH):
-        return [os.path.join(path, f) for f in os.listdir(path) if os.path.isfile(os.path.join(path, f)) and f.endswith(DICTIONARY_EXTENSION)]
-
     def _pick_dictionary(self):
         self.master.withdraw()
         self.pickdict = PickDictionary(
-            self.master, self._dict_selected, self._get_available_dictionaries())
+            self.master, self._dict_selected, get_available_dictionaries())
         self.master.wait_window(self.pickdict.top)
 
     def load_dictionary(self, dictionary):
@@ -346,7 +343,7 @@ class WordbaseApplication(Frame):
                                 f'You requested to open the dictionary {self.current_dictionary[:30] + ("..." if len(self.current_dictionary) > 30 else "")}.\n It is done')
             return
         try:
-            dicts = self._get_available_dictionaries()
+            dicts = get_available_dictionaries()
             if not dicts:
                 # no dictionaies
                 self.open_dictionary()

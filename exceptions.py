@@ -36,3 +36,8 @@ class CannotCompleteSearchException(WordbaseException):
 class CannotDeleteWordException(WordbaseException):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+
+class PermissionDeniedException(WordbaseException):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)

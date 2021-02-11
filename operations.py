@@ -2,7 +2,7 @@ from exceptions import *
 import os
 import json
 from json.decoder import JSONDecodeError
-from presets import parse_word_item, create_word_item
+from presets import *
 
 
 def get_items_in_dict(dictionary):
@@ -11,11 +11,11 @@ def get_items_in_dict(dictionary):
         with open(path, 'r' if os.path.exists(path) else 'a+') as file:
             words = json.load(file)
             return words
-    except JSONDecodeError as e:
-        print(e)
+    except JSONDecodeError:
         raise EmptyDictionaryException
-    except Exception as e:
-        print(e)
+    except PermissionError:
+        raise PermissionDeniedException
+    except Exception:
         raise CannotOpenDictionaryException('Couldn\'t open the dictionary')
 
 
@@ -82,3 +82,7 @@ def find_words_with_query(dictionary, query):
         raise
     except CannotOpenDictionaryException:
         raise
+
+
+def get_available_dictionaries(path=STORAGE_PATH):
+    return [os.path.join(path, f) for f in os.listdir(path) if os.path.isfile(os.path.join(path, f)) and f.endswith(DICTIONARY_EXTENSION)]
