@@ -457,7 +457,7 @@ class WordbaseApplication(Frame):
             # this is the first word
             try:
                 save_dictionary(self.current_dictionary, {
-                                word: {create_word_item(translation, explanation)}})
+                                word: create_word_item(translation, explanation)})
 
                 messagebox.showinfo(
                     'Success', f'The word "{word}" is now in this dictionary!')
